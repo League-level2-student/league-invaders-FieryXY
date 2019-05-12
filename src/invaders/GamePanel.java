@@ -1,3 +1,4 @@
+package invaders;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -5,17 +6,28 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
 public class GamePanel extends JPanel implements ActionListener, KeyListener {
 	
-	//Declare Timer
+	//Declare Timers
 	Timer frameDraw;
+	Timer alienSpawn;
+	
+	//Image variables
+	public static BufferedImage image;
+	public static boolean needImage = true;
+	public static boolean gotImage = false;
 	
 	//Initialize Rocketship
 	Rocketship rocket = new Rocketship(250, 600, 50, 50);
+	
+	//Initialize Object Manager
+	ObjectManager objectManager = new ObjectManager(rocket);
 	
 	//Initialize possible states
 	final int MENU = 0;
@@ -32,6 +44,7 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 	GamePanel() {
 		frameDraw = new Timer(1000/60, this);
 		frameDraw.start();
+		loadImage("space.png");
 		
 	}
 	
@@ -71,15 +84,21 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 		g.drawString("Press SPACE for instructions", 130, 400);
 	}
 	void updateGameState() {
-		
-		
+		objectManager.update();
+		if(rocket.isActive == false) {
+			currentState = END;
+		}
 	}
 	void drawGameState(Graphics g) {
-		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, LeagueInvaders.WIDTH, LeagueInvaders.HEIGHT);
-		//rocket.draw(g);
-		g.setColor(Color.BLUE);
-		g.fillRect(rocket.x, rocket.y, rocket.width, rocket.height);
+		if(gotImage) {
+			g.drawImage(image, 0, 0, LeagueInvaders.WIDTH, LeagueInvaders.HEIGHT, null);
+		}
+		else {
+			g.setColor(Color.BLACK);
+			g.fillRect(0, 0, LeagueInvaders.WIDTH, LeagueInvaders.HEIGHT);
+		}
+		
+		objectManager.draw(g);
 	}
 	void updateEndState() {
 		
@@ -129,25 +148,49 @@ public class GamePanel extends JPanel implements ActionListener, KeyListener {
 		        currentState = MENU;
 		    } else {
 		        currentState++;
+		        if(currentState == GAME) {
+		        		startGame();
+		        }
 		    }
 		}
 		if (e.getKeyCode()==KeyEvent.VK_UP) {
-		    System.out.println("UP");
+		   rocket.up();
 		}
 		if (e.getKeyCode()==KeyEvent.VK_DOWN) {
-		    System.out.println("DOWN");
+		    rocket.down();
 		}
 		if (e.getKeyCode()==KeyEvent.VK_LEFT) {
-		    System.out.println("LEFT");
+		    rocket.left();
 		}
 		if (e.getKeyCode()==KeyEvent.VK_RIGHT) {
-		    System.out.println("RIGHT");
+		    rocket.right();
+		}
+		if(e.getKeyCode() == KeyEvent.VK_SPACE) {
+			objectManager.addProjectile(rocket.getProjectile());
 		}
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
+		
+	}
+	void loadImage(String imageFile) {
+		if(needImage) {
+			try {
+				image = ImageIO.read(this.getClass().getResourceAsStream(imageFile));
+				gotImage = true;
+			}
+			catch(Exception e) {
+				
+			}
+			
+		}
+		needImage = false;
+	}
+	
+	void startGame() {
+		alienSpawn = new Timer(1000, objectManager);
+		alienSpawn.start();
 	}
 }
